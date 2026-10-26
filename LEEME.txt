@@ -1,4 +1,4 @@
-DIARIO DE CAMPO 1.0 — Bitácora de terreno arqueológico
+DIARIO DE CAMPO 1.1 — Bitácora de terreno arqueológico
 Alejandro Concha, arqueólogo
 =======================================================
 
@@ -7,6 +7,9 @@ QUÉ HACE
 - Cada registro puede ser: nota de voz, foto, video o nota escrita.
 - Cada registro guarda hora, autor y coordenadas UTM WGS84 (huso automático, ej. 19S).
 - Funciona sin señal una vez instalada.
+- Transcripción de notas de voz dentro del teléfono (Whisper). La primera vez descarga
+  el modelo (~80 MB "Rápido" o ~250 MB "Preciso"); después transcribe sin señal.
+  Se puede descargar con wifi desde Ajustes. La transcripción se puede corregir con "Editar".
 - Respaldo: crea un .zip con todo (fotos, audios, videos, bitacora.html para leer
   en el PC, registros.csv con coordenadas para ArcGIS/QGIS y diario.json).
   Se envía a Google Drive, iCloud, OneDrive o WhatsApp desde el mismo teléfono.

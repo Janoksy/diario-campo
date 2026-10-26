@@ -119,7 +119,9 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .reg-meta{font-size:14px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
 .reg-meta .mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
 .reg-pie{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.reg-pie .btn{min-height:44px;font-size:15px;padding:0 14px;margin-left:auto}
+.reg-pie .btn{min-height:44px;font-size:15px;padding:0 14px}
+.reg-pie{justify-content:space-between}
+.reg-btns{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
 
 /* Hojas (modales) */
 .velo{position:fixed;inset:0;background:var(--veil);display:flex;align-items:flex-end;justify-content:center;z-index:50}
@@ -150,6 +152,14 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 
 .pie-app{text-align:center;font-size:13px;color:var(--muted);padding-top:8px}
 .peligro{border-top:1px solid var(--line);padding-top:18px}
+.trans{background:var(--bg);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+.trans-t{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.trans p{white-space:pre-wrap;overflow-wrap:anywhere}
+.barra{height:10px;border-radius:999px;background:var(--bg);overflow:hidden;border:1px solid var(--line)}
+.barra div{height:100%;width:0;background:var(--accent);transition:width .3s}
+.barra.indef div{width:35%;animation:indef 1.3s ease-in-out infinite}
+@keyframes indef{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}
+@media (prefers-reduced-motion: reduce){.barra.indef div{animation:none;width:100%;opacity:.5}}
 </style>
 
 </head>
@@ -168,7 +178,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 <script>
 'use strict';
 /* Diario de Campo · Alejandro Concha, arqueólogo */
-const VERSION='1.0';
+const VERSION='1.1';
 const TIPOS={voz:'Nota de voz',foto:'Fotografía',video:'Video',nota:'Nota escrita'};
 const ETIQUETAS=['Observación','Hallazgo','Estratigrafía','Rasgo','Muestra','Registro gráfico'];
 
@@ -390,9 +400,10 @@ async function vSitio(id){
     tarjetas.push(`<article class="reg">
       <div class="reg-cab"><span class="reg-num">Reg. ${pad(num.get(r.id))}</span><span class="reg-tipo">${TIPOS[r.tipo]||r.tipo}${r.duracion?' · '+fmtDur(r.duracion):''}</span><span class="reg-hora">${hora(r.creado)}</span></div>
       ${media}
+      ${r.transcripcion?`<div class="trans"><span class="trans-t">Transcripción</span><p>${esc(r.transcripcion)}</p></div>`:''}
       ${r.texto?`<div class="reg-txt">${esc(r.texto)}</div>`:''}
       <div class="reg-meta"><span class="mono">${r.pos?esc(utmTexto(r.pos))+' · ±'+Math.round(r.pos.prec)+' m':'Sin coordenadas'}</span><span>${esc(r.autor||'')}${r.origen==='galeria'?' · subido desde galería':''}</span></div>
-      <div class="reg-pie"><span class="chip">${esc(r.etiqueta||'Observación')}</span><button class="btn btn-sec" data-a="editar" data-id="${r.id}">${r.texto?'Editar':'Agregar comentario'}</button></div>
+      <div class="reg-pie"><span class="chip">${esc(r.etiqueta||'Observación')}</span><span class="reg-btns">${r.tipo==='voz'&&r.archivoId&&!r.transcripcion?`<button class="btn btn-pri" data-a="transcribir" data-id="${r.id}">Transcribir</button>`:''}<button class="btn btn-sec" data-a="editar" data-id="${r.id}">${r.texto||r.transcripcion?'Editar':'Comentar'}</button></span></div>
     </article>`);
   }
   return cab(s.nombre,(d?fechaCorta(d.fecha):''),true,`<button class="ico-btn" data-a="opcSitio" data-id="${id}" aria-label="Opciones del sitio">${ico('ajustes',22)}</button>`)+`<main class="wrap">
@@ -404,6 +415,7 @@ async function vSitio(id){
       <button class="accion chica" data-a="nota">${ico('nota',24)} Escribir nota</button>
       <button class="accion chica" data-a="galeria">${ico('galeria',24)} Desde galería</button>
     </div>
+    ${(()=>{const pend=regs.filter(r=>r.tipo==='voz'&&r.archivoId&&!r.transcripcion).length;return pend>1?`<button class="btn btn-sec" data-a="transcribirSitio" data-id="${id}">Transcribir los ${pend} audios pendientes</button>`:'';})()}
     <section class="sec"><h2 class="sec-t">${regs.length?plural(regs.length,'registro')+' · el más reciente arriba':'Registros'}</h2>
       ${tarjetas.length?tarjetas.join(''):`<div class="vacio">Aún no hay registros en este sitio.<br>Usa los botones de arriba para grabar, fotografiar o anotar.</div>`}
     </section>
@@ -558,9 +570,9 @@ async function marcarRespaldo(){
 }
 function csv(p,regs,sitioDe,diaDe){
   const q=v=>{v=v==null?'':String(v);return /[";\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
-  const cab=['proyecto','fecha','sitio','registro','hora','tipo','etiqueta','autor','comentario','huso','este','norte','latitud','longitud','precision_m','archivo'];
+  const cab=['proyecto','fecha','sitio','registro','hora','tipo','etiqueta','autor','comentario','transcripcion','huso','este','norte','latitud','longitud','precision_m','archivo'];
   const filas=regs.map(r=>{const u=r.pos?aUTM(r.pos.lat,r.pos.lon):null;const s=sitioDe[r.sitioId],d=diaDe[r.diaId];
-    return [p.nombre,d?d.fecha:'',s?s.nombre:'',r.num,hora(r.creado),TIPOS[r.tipo]||r.tipo,r.etiqueta,r.autor,r.texto,u?u.zona+u.hemi:'',u?Math.round(u.E):'',u?Math.round(u.N):'',r.pos?r.pos.lat.toFixed(7):'',r.pos?r.pos.lon.toFixed(7):'',r.pos?Math.round(r.pos.prec):'',r.archivo||''].map(q).join(';');});
+    return [p.nombre,d?d.fecha:'',s?s.nombre:'',r.num,hora(r.creado),TIPOS[r.tipo]||r.tipo,r.etiqueta,r.autor,r.texto,r.transcripcion||'',u?u.zona+u.hemi:'',u?Math.round(u.E):'',u?Math.round(u.N):'',r.pos?r.pos.lat.toFixed(7):'',r.pos?r.pos.lon.toFixed(7):'',r.pos?Math.round(r.pos.prec):'',r.archivo||''].map(q).join(';');});
   return '﻿'+[cab.join(';')].concat(filas).join('\r\n');
 }
 function bitacoraHTML(p,dias,sitios,regs){
@@ -578,6 +590,7 @@ function bitacoraHTML(p,dias,sitios,regs){
       for(const r of rs){
         h+=`<div class="r"><b>Reg. ${pad(r.num)} · ${e(TIPOS[r.tipo]||r.tipo)} · ${e(r.etiqueta)}</b><div class="m">${hora(r.creado)} · ${e(r.autor)} · ${r.pos?e(utmTexto(r.pos))+' · ±'+Math.round(r.pos.prec)+' m':'sin coordenadas'}</div>`;
         if(r.archivo){const a=e(r.archivo);h+=r.tipo==='foto'?`<img src="${a}" alt="">`:r.tipo==='video'?`<video src="${a}" controls></video>`:`<audio src="${a}" controls></audio>`;h+=`<div class="m">${a}</div>`;}
+        if(r.transcripcion)h+=`<div class="t"><i>Transcripción:</i> ${e(r.transcripcion)}</div>`;
         if(r.texto)h+=`<div class="t">${e(r.texto)}</div>`;
         h+='</div>';
       }
@@ -627,6 +640,78 @@ async function importarZip(file){
   }catch(err){console.error(err);abrirModal(`<h2>No se pudo abrir el respaldo</h2><p>${esc(err.message||err)}</p><button class="btn btn-sec" data-a="cerrar">Cerrar</button>`);}
 }
 
+/* ---------- transcripción de voz (Whisper, dentro del teléfono) ---------- */
+const MODELOS={rapido:{id:'onnx-community/whisper-base',nombre:'Rápido',tam:'~80 MB'},preciso:{id:'onnx-community/whisper-small',nombre:'Preciso',tam:'~250 MB'}};
+const modeloClave=()=>MODELOS[ajustes.modelo]?ajustes.modelo:'rapido';
+const modeloSel=()=>{const b=document.querySelector('#mods [aria-pressed="true"]');return b?b.dataset.m:modeloClave();};
+let transcriptor=null, pendientesT={}, transcribiendo=false;
+function obtenerTranscriptor(){
+  if(transcriptor)return transcriptor;
+  transcriptor=new Worker('transcriptor.js',{type:'module'});
+  transcriptor.onmessage=e=>{const f=pendientesT[e.data.id];if(f)f(e.data);};
+  transcriptor.onerror=e=>{const msg=(e&&e.message)||'No se pudo iniciar el transcriptor';for(const k in pendientesT)pendientesT[k]({t:'error',msg});transcriptor=null;};
+  return transcriptor;
+}
+function enviarAlTranscriptor(msg,alAvanzar){
+  return new Promise((res,rej)=>{
+    let w; try{w=obtenerTranscriptor();}catch(e){rej(new Error('Este teléfono no permite la transcripción ('+(e.message||e)+')'));return;}
+    const id=uid();
+    pendientesT[id]=m=>{if(m.t==='fin'){delete pendientesT[id];res(m);}else if(m.t==='error'){delete pendientesT[id];rej(new Error(m.msg));}else if(alAvanzar)alAvanzar(m);};
+    w.postMessage(Object.assign({id},msg),msg.audio?[msg.audio.buffer]:[]);
+  });
+}
+async function audioA16k(blob){
+  const ab=await blob.arrayBuffer();
+  const AC=window.AudioContext||window.webkitAudioContext;
+  const ctx=new AC();
+  let buf; try{buf=await new Promise((res,rej)=>{const p=ctx.decodeAudioData(ab,res,rej);if(p&&p.then)p.then(res,rej);});}finally{if(ctx.close)ctx.close();}
+  const off=new (window.OfflineAudioContext||window.webkitOfflineAudioContext)(1,Math.max(1,Math.ceil(buf.duration*16000)),16000);
+  const src=off.createBufferSource();src.buffer=buf;src.connect(off.destination);src.start(0);
+  const r=await off.startRendering();
+  return new Float32Array(r.getChannelData(0));
+}
+const ALUCINACIONES=[/subt[ií]tulos (realizados )?por la comunidad de amara\.org/gi,/¡?suscr[ií]bete[^.!]*[.!]?/gi,/gracias por ver( el v[ií]deo)?[.!]?/gi,/subt[ií]tulos? por [^.]*\./gi];
+const limpiarTexto=t=>{for(const re of ALUCINACIONES)t=t.replace(re,'');return t.replace(/\s+/g,' ').trim();};
+async function estadoModelo(){
+  const el=$('#mod-estado'); if(!el)return;
+  try{
+    const m=MODELOS[modeloSel()];
+    const c=await caches.open('transformers-cache'); const ks=await c.keys();
+    const n=ks.filter(k=>k.url.includes(m.id+'/')).length;
+    el.textContent=n>=4?'Modelo '+m.nombre+' descargado. La transcripción funciona sin señal.':'Modelo '+m.nombre+' no descargado. Se descargará la primera vez que transcribas (necesita internet).';
+  }catch(e){el.textContent='La primera transcripción necesita internet para descargar el modelo.';}
+}
+async function transcribir(ids){
+  if(!ids.length)return;
+  if(transcribiendo){toast('Ya hay una transcripción en curso');return;}
+  transcribiendo=true; let lock=null;
+  try{if(navigator.wakeLock)lock=await navigator.wakeLock.request('screen');}catch(e){}
+  abrirModal(`<h2>Transcribiendo</h2><p id="tr-e">Preparando…</p><div class="barra indef" id="tr-b"><div></div></div>
+    <p class="ayuda">No cierres la app ni bloquees la pantalla. Un audio de 1 minuto puede tardar entre 20 segundos y 2 minutos, según el teléfono.</p>`,true);
+  const estado=(t,pct)=>{const e=$('#tr-e'),b=$('#tr-b');if(e)e.textContent=t;if(b){b.classList.toggle('indef',pct==null);b.firstElementChild.style.width=pct==null?'':pct+'%';}};
+  const modelo=MODELOS[modeloClave()].id; let ok=0;
+  try{
+    for(let i=0;i<ids.length;i++){
+      const r=await dbGet('registros',ids[i]); if(!r||!r.archivoId)continue;
+      const a=await dbGet('archivos',r.archivoId); if(!a||!a.blob)continue;
+      const cual=ids.length>1?' '+(i+1)+' de '+ids.length:'';
+      estado('Preparando audio'+cual+'…',null);
+      let audio; try{audio=await audioA16k(a.blob);}catch(e){throw new Error('No se pudo leer el audio'+cual+'. Puede que el formato no sea compatible con este teléfono.');}
+      const res=await enviarAlTranscriptor({t:'transcribir',audio,modelo},m=>{
+        if(m.t==='descarga')estado('Descargando el modelo de transcripción (solo la primera vez)… '+m.pct+'%',m.pct);
+        else if(m.t==='procesando')estado('Transcribiendo audio'+cual+'…',null);
+      });
+      const cur=await dbGet('registros',r.id); if(!cur)continue;
+      cur.transcripcion=limpiarTexto(res.texto||'')||'(No se reconoció voz en este audio)'; cur.modificado=Date.now();
+      await dbPut('registros',cur); ok++;
+    }
+    cerrarModal(); toast(ok===1?'Audio transcrito':plural(ok,'audio transcrito','audios transcritos'),3000);
+  }catch(err){console.error(err);
+    const sinRed=!navigator.onLine||/failed to fetch|network|load failed/i.test(String(err.message||err));
+    abrirModal(`<h2>No se pudo transcribir</h2><p>${sinRed?'No se pudo descargar el modelo de transcripción. La primera vez necesitas buena señal o wifi; después funciona sin señal. Puedes descargarlo con calma desde Ajustes.':esc(err.message||err)}</p>${ok?`<p class="ayuda">Se alcanzaron a transcribir ${plural(ok,'audio')}.</p>`:''}<button class="btn btn-sec" data-a="cerrar">Cerrar</button>`);
+  }finally{transcribiendo=false;if(lock)lock.release().catch(()=>{});if(ok)tocarProyecto((await dbGet('registros',ids[0])||{}).proyectoId);render(false);}
+}
+
 /* ---------- acciones ---------- */
 const A={
   ir:b=>ir({v:b.dataset.v,id:b.dataset.id}),
@@ -638,13 +723,19 @@ const A={
   noInstalar:()=>{lsSet('dc-sin-instalar','1');render(false);},
   ajustes(){abrirModal(`<h2>Ajustes</h2>
     <div class="campo"><label for="f-nombre2">Tu nombre</label><input id="f-nombre2" value="${esc(ajustes.nombre)}"></div>
+    <div class="campo"><label>Transcripción de voz</label><div class="chips" id="mods">${Object.entries(MODELOS).map(([k,m])=>`<button type="button" data-a="etq" data-m="${k}" aria-pressed="${k===modeloClave()}">${m.nombre} · ${m.tam}</button>`).join('')}</div>
+      <p class="ayuda"><b>Rápido</b> sirve para la mayoría de los casos. <b>Preciso</b> entiende mejor, pero ocupa más espacio y demora más.</p></div>
+    <p class="ayuda" id="mod-estado">Revisando el modelo…</p>
+    <div class="barra" id="mod-barra" hidden><div></div></div>
+    <button class="btn btn-sec" data-a="descargarModelo">Descargar el modelo ahora (con wifi)</button>
     <p class="ayuda" id="espacio">Calculando espacio usado…</p>
     <button class="btn btn-pri" data-a="guardarAjustes">Guardar</button>
     <p class="ayuda">Los registros se guardan solo en este teléfono hasta que hagas un respaldo. Respalda al final de cada jornada.</p>
     <p class="pie-app">Diario de Campo ${VERSION} · Alejandro Concha, arqueólogo</p>`);
+    estadoModelo();
     if(navigator.storage&&navigator.storage.estimate)navigator.storage.estimate().then(async e=>{const per=navigator.storage.persisted?await navigator.storage.persisted():false;const el=$('#espacio');if(el)el.textContent='Espacio usado: '+mb(e.usage||0)+(e.quota?' de '+mb(e.quota)+' disponibles':'')+(per?' · Datos protegidos':'');});
   },
-  async guardarAjustes(){const n=$('#f-nombre2').value.trim();if(n){ajustes.nombre=n;await dbPut('ajustes',{k:'perfil',v:ajustes});}cerrarModal();render(false);toast('Guardado');},
+  async guardarAjustes(){const n=$('#f-nombre2').value.trim();if(n)ajustes.nombre=n;ajustes.modelo=modeloSel();await dbPut('ajustes',{k:'perfil',v:ajustes});cerrarModal();render(false);toast('Guardado');},
   nuevoProyecto(){abrirModal(`<h2>Nuevo proyecto</h2>
     <div class="campo"><label for="f-pn">Nombre del proyecto</label><input id="f-pn" placeholder="Ej: Línea de Base Proyecto Los Andes"></div>
     <div class="campo"><label for="f-pc">Código o mandante (opcional)</label><input id="f-pc" placeholder="Ej: ASC-2026-14"></div>
@@ -687,16 +778,28 @@ const A={
   nota(){pedirPosicion();abrirModal(`<h2>Nota escrita</h2><div class="campo"><label for="f-txt">Lo que observas</label><textarea id="f-txt" placeholder="Describe lo que ves: material, ubicación, contexto…"></textarea></div>
     ${chipsEtq('Observación')}<button class="btn btn-pri" data-a="guardarNota">Guardar nota</button><button class="btn btn-sec" data-a="cerrar">Cancelar</button>`);},
   async guardarNota(){const t=$('#f-txt').value.trim();if(!t){toast('La nota está vacía');return;}const e=etqSel();cerrarModal();await nuevoRegistro({tipo:'nota',texto:t,etiqueta:e});toast('Nota guardada');},
-  etq(b){b.parentElement.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed','true');},
+  etq(b){b.parentElement.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed','true');if(b.parentElement.id==='mods')estadoModelo();},
   async editar(b){const r=await dbGet('registros',b.dataset.id);if(!r)return;
-    abrirModal(`<h2>${TIPOS[r.tipo]} · ${hora(r.creado)}</h2><div class="campo"><label for="f-txt">Comentario</label><textarea id="f-txt" placeholder="Agrega una descripción">${esc(r.texto)}</textarea></div>
+    abrirModal(`<h2>${TIPOS[r.tipo]} · ${hora(r.creado)}</h2>${r.transcripcion!=null&&r.tipo==='voz'?`<div class="campo"><label for="f-trans">Transcripción (puedes corregirla)</label><textarea id="f-trans">${esc(r.transcripcion)}</textarea></div>`:''}<div class="campo"><label for="f-txt">Comentario</label><textarea id="f-txt" placeholder="Agrega una descripción">${esc(r.texto)}</textarea></div>
       ${chipsEtq(r.etiqueta||'Observación')}<button class="btn btn-pri" data-a="guardarEdicion" data-id="${r.id}">Guardar</button>
       <button class="btn btn-pel" data-a="borrarReg" data-id="${r.id}">Eliminar registro</button><button class="btn btn-sec" data-a="cerrar">Cancelar</button>`);},
-  async guardarEdicion(b){const r=await dbGet('registros',b.dataset.id);r.texto=$('#f-txt').value.trim();r.etiqueta=etqSel();r.modificado=Date.now();await dbPut('registros',r);await tocarProyecto(r.proyectoId);cerrarModal();render(false);toast('Guardado');},
+  async guardarEdicion(b){const r=await dbGet('registros',b.dataset.id);r.texto=$('#f-txt').value.trim();if($('#f-trans'))r.transcripcion=$('#f-trans').value.trim();r.etiqueta=etqSel();r.modificado=Date.now();await dbPut('registros',r);await tocarProyecto(r.proyectoId);cerrarModal();render(false);toast('Guardado');},
   async borrarReg(b){if(b.dataset.ok!=='1'){b.dataset.ok='1';b.textContent='Toca de nuevo para confirmar';return;}
     const r=await dbGet('registros',b.dataset.id);if(r.archivoId)await dbDel('archivos',r.archivoId);await dbDel('registros',r.id);cerrarModal();render(false);toast('Registro eliminado');},
   verFoto(b){abrirModal('');$('#modal').innerHTML=`<div class="visor" data-a="cerrar"><img src="${b.dataset.u}" alt="Fotografía ampliada"><button class="ico-btn" data-a="cerrar" aria-label="Cerrar">${ico('cerrar',26)}</button></div>`;},
   respaldar:b=>exportar(b.dataset.id),
+  transcribir:b=>transcribir([b.dataset.id]),
+  async transcribirSitio(b){const rs=(await dbIdx('registros','sitioId',b.dataset.id)).filter(r=>r.tipo==='voz'&&r.archivoId&&!r.transcripcion).sort((a,c)=>a.creado-c.creado);transcribir(rs.map(r=>r.id));},
+  async descargarModelo(){
+    if(transcribiendo){toast('Espera a que termine la transcripción en curso');return;}
+    const clave=modeloSel(); ajustes.modelo=clave; await dbPut('ajustes',{k:'perfil',v:ajustes});
+    const est=$('#mod-estado'), bar=$('#mod-barra');
+    transcribiendo=true; if(bar)bar.hidden=false; if(est)est.textContent='Preparando descarga…';
+    try{await enviarAlTranscriptor({t:'precargar',modelo:MODELOS[clave].id},m=>{if(m.t==='descarga'){const e=$('#mod-estado'),b=$('#mod-barra div');if(e)e.textContent='Descargando… '+m.pct+'%';if(b)b.style.width=m.pct+'%';}});
+      toast('Modelo listo. Ya puedes transcribir sin señal.',3500);}
+    catch(err){const e=$('#mod-estado');if(e)e.textContent=navigator.onLine?'No se pudo descargar: '+(err.message||err):'Sin internet. Conéctate a wifi para descargar el modelo.';}
+    finally{transcribiendo=false;const b=$('#mod-barra');if(b)b.hidden=true;estadoModelo();}
+  },
   async exportarDia(b){const d=await dbGet('dias',b.dataset.id);exportar(d.proyectoId,d.id);},
   async compartirZip(){if(!zipListo)return;const f=new File([zipListo.blob],zipListo.nombre,{type:'application/zip'});
     try{await navigator.share({files:[f],title:zipListo.nombre});await marcarRespaldo();cerrarModal();toast('Respaldo enviado');render(false);}
