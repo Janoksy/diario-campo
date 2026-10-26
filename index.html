@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1C584E">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Diario Campo">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="iconos/icono-192.png">
+<link rel="apple-touch-icon" href="iconos/apple-touch-icon.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+<title>Diario de Campo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Atkinson+Hyperlegible+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: una sola columna tipo libreta de campo; cabecera fija con migas; acciones grandes al alcance del pulgar; hojas inferiores para formularios */
+:root{
+  --bg:#EDF0EE; --surface:#FFFFFF; --ink:#17201D; --muted:#55625C; --line:#CFD7D3;
+  --accent:#1C584E; --accent-ink:#FFFFFF; --accent-soft:#DAE9E4;
+  --rec:#B02F27; --rec-ink:#FFFFFF; --rec-soft:#F5E0DD;
+  --warn:#714C06; --warn-soft:#F4E7CB; --ok:#2A6738; --ok-soft:#DDEEDF;
+  --veil:rgba(12,18,16,.55);
+  --f-body:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-mono:"Atkinson Hyperlegible Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --r:12px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1513; --surface:#19211E; --ink:#E6ECE9; --muted:#9BA8A2; --line:#2D3833;
+  --accent:#6CB8AA; --accent-ink:#0B1714; --accent-soft:#1E3631;
+  --rec:#E4584C; --rec-ink:#1A0C0A; --rec-soft:#3A201D;
+  --warn:#E5B95E; --warn-soft:#352A14; --ok:#7CC48A; --ok-soft:#1C3021;
+  --veil:rgba(0,0,0,.65); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1513; --surface:#19211E; --ink:#E6ECE9; --muted:#9BA8A2; --line:#2D3833;
+  --accent:#6CB8AA; --accent-ink:#0B1714; --accent-soft:#1E3631;
+  --rec:#E4584C; --rec-ink:#1A0C0A; --rec-soft:#3A201D;
+  --warn:#E5B95E; --warn-soft:#352A14; --ok:#7CC48A; --ok-soft:#1C3021;
+  --veil:rgba(0,0,0,.65); color-scheme:dark}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.45 var(--f-body);-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+h1,h2,h3{text-wrap:balance;margin:0;line-height:1.2}
+p{margin:0}
+
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.cab{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--surface);border-bottom:1px solid var(--line)}
+.cab-in{max-width:680px;margin:0 auto;display:flex;align-items:center;gap:8px;min-height:60px;padding-block:6px;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
+.cab-tit{flex:1;min-width:0}
+.cab-tit h1{font-size:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cab-tit .miga{font-size:14px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ico-btn{width:48px;height:48px;flex:none;display:grid;place-items:center;border:0;background:transparent;border-radius:10px;color:var(--ink)}
+.ico-btn:active{background:var(--bg)}
+
+.wrap{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:20px;padding-block:18px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.sec{display:flex;flex-direction:column;gap:10px}
+.sec-t{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.ayuda{color:var(--muted);font-size:15px}
+
+.btn{min-height:54px;border-radius:var(--r);border:1px solid transparent;padding:0 18px;font-size:17px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:10px;text-align:center}
+.btn-pri{background:var(--accent);color:var(--accent-ink)}
+.btn-sec{background:var(--surface);color:var(--ink);border-color:var(--line)}
+.btn-rec{background:var(--rec);color:var(--rec-ink)}
+.btn-pel{background:transparent;color:var(--rec);border-color:var(--rec)}
+.btn-full{width:100%}
+.btn:active{transform:translateY(1px)}
+.btn[disabled]{opacity:.5}
+.fila{display:flex;gap:10px;flex-wrap:wrap}
+.fila>.btn{flex:1 1 140px}
+
+.lista{display:flex;flex-direction:column;gap:8px}
+.item{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 14px 14px 16px;min-height:72px}
+.item-c{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.item-t{font-weight:700;font-size:18px;overflow-wrap:anywhere}
+.item-s{font-size:15px;color:var(--muted)}
+.item .flecha{color:var(--muted);flex:none}
+
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--accent-soft);color:var(--ink);white-space:nowrap}
+.chip.warn{background:var(--warn-soft);color:var(--warn)}
+.chip.ok{background:var(--ok-soft);color:var(--ok)}
+
+.aviso{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px}
+.aviso.warn{background:var(--warn-soft);border-color:transparent}
+.aviso.warn .aviso-t{color:var(--warn)}
+.aviso-t{font-weight:700;font-size:17px}
+
+.vacio{border:2px dashed var(--line);border-radius:var(--r);padding:24px 18px;text-align:center;color:var(--muted)}
+
+/* Sitio: acciones */
+.acciones{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.accion{min-height:96px;border-radius:var(--r);border:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-weight:700;font-size:17px;padding:10px}
+.accion.voz{grid-column:1/-1;background:var(--rec);color:var(--rec-ink);border-color:transparent;min-height:104px;flex-direction:row;gap:14px;font-size:20px}
+.accion.chica{min-height:64px;flex-direction:row;gap:10px;font-size:16px}
+.accion:active{transform:translateY(1px)}
+
+.gps{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:8px 8px 8px 12px;font-family:var(--f-mono);font-size:14px;font-variant-numeric:tabular-nums}
+.gps-t{flex:1;min-width:0;overflow-wrap:anywhere}
+.punto{width:10px;height:10px;border-radius:50%;background:var(--muted);flex:none}
+.punto.ok{background:var(--ok)} .punto.warn{background:var(--warn)}
+
+/* Registros */
+.reg{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px}
+.reg-cab{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.reg-num{font-family:var(--f-mono);font-weight:600;font-size:15px}
+.reg-tipo{font-weight:700}
+.reg-hora{margin-left:auto;font-family:var(--f-mono);font-size:15px;color:var(--muted);font-variant-numeric:tabular-nums}
+.reg img{display:block;width:100%;max-height:420px;object-fit:cover;border-radius:8px;background:var(--bg)}
+.reg video{display:block;width:100%;max-height:420px;border-radius:8px;background:#000}
+.reg audio{width:100%}
+.reg-txt{white-space:pre-wrap;overflow-wrap:anywhere}
+.reg-meta{font-size:14px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.reg-meta .mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.reg-pie{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.reg-pie .btn{min-height:44px;font-size:15px;padding:0 14px;margin-left:auto}
+
+/* Hojas (modales) */
+.velo{position:fixed;inset:0;background:var(--veil);display:flex;align-items:flex-end;justify-content:center;z-index:50}
+.hoja{background:var(--surface);width:100%;max-width:680px;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;display:flex;flex-direction:column;gap:16px;padding-top:20px;padding-bottom:calc(20px + env(safe-area-inset-bottom,0px));padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px))}
+.hoja h2{font-size:22px}
+.campo{display:flex;flex-direction:column;gap:6px}
+.campo label{font-weight:700;font-size:15px}
+.campo input,.campo textarea{width:100%;min-height:52px;border:1px solid var(--line);border-radius:10px;background:var(--bg);padding:12px 14px;font-size:17px}
+.campo textarea{min-height:140px;resize:vertical;line-height:1.45}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{min-height:44px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-weight:700;font-size:15px}
+.chips button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+.grab{display:flex;flex-direction:column;align-items:center;gap:14px;padding:8px 0}
+.grab-btn{width:132px;height:132px;border-radius:50%;border:6px solid var(--rec-soft);background:var(--rec);display:grid;place-items:center}
+.grab-ico{width:44px;height:44px;border-radius:50%;background:var(--rec-ink)}
+.grab-btn.on .grab-ico{border-radius:8px;width:40px;height:40px}
+.grab-btn.on{animation:latido 1.4s ease-in-out infinite}
+@keyframes latido{50%{box-shadow:0 0 0 14px var(--rec-soft)}}
+.grab-t{font-family:var(--f-mono);font-size:44px;font-weight:600;font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion: reduce){.grab-btn.on{animation:none}}
+
+.visor{position:fixed;inset:0;z-index:60;background:#000;display:flex;align-items:center;justify-content:center}
+.visor img{max-width:100%;max-height:100%;object-fit:contain}
+.visor .ico-btn{position:absolute;top:calc(8px + env(safe-area-inset-top,0px));right:calc(8px + env(safe-area-inset-right,0px));color:#fff;background:rgba(0,0,0,.5)}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:70;background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:700;max-width:calc(100% - 32px);text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+
+.pie-app{text-align:center;font-size:13px;color:var(--muted);padding-top:8px}
+.peligro{border-top:1px solid var(--line);padding-top:18px}
+</style>
+
+</head>
+<body>
+<div id="app"></div>
+<div id="modal"></div>
+<div id="toast" class="toast" role="status" hidden></div>
+
+<input type="file" id="in-foto" accept="image/*" capture="environment" hidden>
+<input type="file" id="in-video" accept="video/*" capture="environment" hidden>
+<input type="file" id="in-audio" accept="audio/*" capture hidden>
+<input type="file" id="in-galeria" accept="image/*,video/*,audio/*" multiple hidden>
+<input type="file" id="in-zip" accept=".zip,application/zip" hidden>
+
+<script src="jszip.min.js"></script>
+<script>
+'use strict';
+/* Diario de Campo · Alejandro Concha, arqueólogo */
+const VERSION='1.0';
+const TIPOS={voz:'Nota de voz',foto:'Fotografía',video:'Video',nota:'Nota escrita'};
+const ETIQUETAS=['Observación','Hallazgo','Estratigrafía','Rasgo','Muestra','Registro gráfico'];
+
+let db=null, ajustes={nombre:''}, vista={v:'inicio'}, urls=[], ultimaPos=null, buscandoPos=false, instalarEvt=null, zipListo=null, grab=null;
+
+/* ---------- utilidades ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>(window.crypto&&crypto.randomUUID)?crypto.randomUUID():'id-'+Date.now().toString(36)+Math.random().toString(36).slice(2,12);
+const pad=(n,l=2)=>String(n).padStart(l,'0');
+const isoDe=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const hoyISO=()=>isoDe(new Date());
+const fechaDe=iso=>{const [y,m,d]=iso.split('-').map(Number);return new Date(y,m-1,d);};
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const fechaLarga=iso=>cap(fechaDe(iso).toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'long',year:'numeric'}));
+const fechaCorta=iso=>fechaDe(iso).toLocaleDateString('es-CL',{day:'numeric',month:'short'});
+const hora=ts=>{const d=new Date(ts);return pad(d.getHours())+':'+pad(d.getMinutes());};
+const miles=n=>Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+const mb=b=>b<1048576?Math.max(1,Math.round(b/1024))+' KB':(b/1048576).toFixed(b<10485760?1:0).replace('.',',')+' MB';
+const hace=ts=>{if(!ts)return 'nunca';const m=Math.round((Date.now()-ts)/60000);if(m<1)return 'recién';if(m<60)return 'hace '+m+' min';const h=Math.round(m/60);if(h<24)return 'hace '+h+' h';const d=Math.round(h/24);return d===1?'ayer':'hace '+d+' días';};
+const slug=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40)||'sin-nombre';
+const iniciales=n=>String(n||'').trim().split(/\s+/).map(p=>p[0]||'').join('').toUpperCase().slice(0,3)||'XX';
+const plural=(n,s,p)=>n+' '+(n===1?s:(p||s+'s'));
+
+function extDe(mime,tipo){
+  const m=(mime||'').toLowerCase();
+  if(m.includes('jpeg')||m.includes('jpg'))return 'jpg';
+  if(m.includes('png'))return 'png'; if(m.includes('heic'))return 'heic'; if(m.includes('heif'))return 'heif'; if(m.includes('webp'))return 'webp';
+  if(m.includes('quicktime'))return 'mov';
+  if(m.startsWith('audio/mp4')||m.includes('m4a')||m.includes('aac'))return 'm4a';
+  if(m.startsWith('video/mp4'))return 'mp4';
+  if(m.includes('webm'))return 'webm'; if(m.includes('ogg'))return 'ogg'; if(m.includes('mpeg'))return tipo==='video'?'mpg':'mp3';
+  if(m.includes('wav'))return 'wav'; if(m.includes('3gpp'))return '3gp';
+  return tipo==='foto'?'jpg':tipo==='video'?'mp4':'bin';
+}
+
+/* UTM WGS84 */
+function aUTM(lat,lon){
+  const a=6378137,f=1/298.257223563,k0=0.9996,e2=f*(2-f),ep2=e2/(1-e2);
+  const zona=Math.floor((lon+180)/6)+1;
+  const lon0=((zona-1)*6-180+3)*Math.PI/180;
+  const phi=lat*Math.PI/180,lam=lon*Math.PI/180;
+  const sin=Math.sin(phi),cos=Math.cos(phi),tan=Math.tan(phi);
+  const N=a/Math.sqrt(1-e2*sin*sin),T=tan*tan,C=ep2*cos*cos,A=cos*(lam-lon0);
+  const M=a*((1-e2/4-3*e2*e2/64-5*e2**3/256)*phi-(3*e2/8+3*e2*e2/32+45*e2**3/1024)*Math.sin(2*phi)+(15*e2*e2/256+45*e2**3/1024)*Math.sin(4*phi)-(35*e2**3/3072)*Math.sin(6*phi));
+  const E=k0*N*(A+(1-T+C)*A**3/6+(5-18*T+T*T+72*C-58*ep2)*A**5/120)+500000;
+  let Nn=k0*(M+N*tan*(A*A/2+(5-T+9*C+4*C*C)*A**4/24+(61-58*T+T*T+600*C-330*ep2)*A**6/720));
+  if(lat<0)Nn+=10000000;
+  return {zona,hemi:lat<0?'S':'N',E,N:Nn};
+}
+function utmTexto(p){if(!p)return '';const u=aUTM(p.lat,p.lon);return u.zona+u.hemi+' · '+miles(u.E)+' E · '+miles(u.N)+' N';}
+
+/* ---------- íconos ---------- */
+const ICO={
+  mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/>',
+  foto:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+  video:'<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/>',
+  nota:'<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/>',
+  galeria:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/>',
+  atras:'<path d="M15 5l-7 7 7 7"/>',
+  sig:'<path d="M9 5l7 7-7 7"/>',
+  ajustes:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9L7 7M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
+  gps:'<path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+  cerrar:'<path d="M6 6l12 12M18 6L6 18"/>',
+  nube:'<path d="M7 18h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 9a4.5 4.5 0 0 0 1 9z"/><path d="M12 11v6M9.5 13.5L12 11l2.5 2.5"/>',
+  refrescar:'<path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/>'
+};
+const ico=(n,s=24)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICO[n]}</svg>`;
+
+/* ---------- base de datos (IndexedDB, en el teléfono) ---------- */
+function abrirDB(){return new Promise((res,rej)=>{
+  const r=indexedDB.open('diario-campo',1);
+  r.onupgradeneeded=()=>{const d=r.result;
+    d.createObjectStore('proyectos',{keyPath:'id'});
+    d.createObjectStore('dias',{keyPath:'id'}).createIndex('proyectoId','proyectoId');
+    d.createObjectStore('sitios',{keyPath:'id'}).createIndex('diaId','diaId');
+    const re=d.createObjectStore('registros',{keyPath:'id'}); re.createIndex('sitioId','sitioId'); re.createIndex('proyectoId','proyectoId');
+    d.createObjectStore('archivos',{keyPath:'id'});
+    d.createObjectStore('ajustes',{keyPath:'k'});
+  };
+  r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); r.onblocked=()=>rej(new Error('bloqueada'));
+});}
+const pr=r=>new Promise((res,rej)=>{r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});
+const st=(s,m='readonly')=>db.transaction(s,m).objectStore(s);
+const dbGet=(s,k)=>pr(st(s).get(k));
+const dbPut=(s,v)=>pr(st(s,'readwrite').put(v));
+const dbDel=(s,k)=>pr(st(s,'readwrite').delete(k));
+const dbAll=s=>pr(st(s).getAll());
+const dbIdx=(s,i,v)=>pr(st(s).index(i).getAll(v));
+
+async function tocarProyecto(id,ts){const p=await dbGet('proyectos',id);if(p){p.actividad=ts||Date.now();await dbPut('proyectos',p);}}
+
+/* ---------- navegación ---------- */
+function ir(v){vista=v;history.pushState(v,'');render(true);}
+addEventListener('popstate',e=>{if($('#modal').innerHTML&&!grab){cerrarModal();}vista=e.state||{v:'inicio'};render(true);});
+
+function cab(titulo,miga,atras,derecha=''){
+  return `<header class="cab"><div class="cab-in">
+    ${atras?`<button class="ico-btn" data-a="atras" aria-label="Volver">${ico('atras',26)}</button>`:''}
+    <div class="cab-tit">${miga?`<div class="miga">${esc(miga)}</div>`:''}<h1>${esc(titulo)}</h1></div>${derecha}
+  </div></header>`;
+}
+
+async function render(arriba){
+  urls.forEach(u=>URL.revokeObjectURL(u)); urls=[];
+  const app=$('#app'); const y=window.scrollY;
+  try{
+    let h='';
+    if(vista.v==='proyecto')h=await vProyecto(vista.id);
+    else if(vista.v==='dia')h=await vDia(vista.id);
+    else if(vista.v==='sitio')h=await vSitio(vista.id);
+    else h=await vInicio();
+    app.innerHTML=h;
+  }catch(e){console.error(e);app.innerHTML=cab('Diario de Campo')+`<main class="wrap"><div class="aviso warn"><div class="aviso-t">No se pudo mostrar esta pantalla</div><p>${esc(e.message||e)}</p><button class="btn btn-sec" data-a="inicio">Ir al inicio</button></div></main>`;}
+  window.scrollTo(0,arriba?0:y);
+}
+
+/* ---------- pantalla: inicio ---------- */
+const esIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const instalada=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+
+async function vInicio(){
+  const der=`<button class="ico-btn" data-a="ajustes" aria-label="Ajustes">${ico('ajustes',24)}</button>`;
+  if(!ajustes.nombre){
+    return cab('Diario de Campo','',false)+`<main class="wrap">
+      <div class="aviso"><div class="aviso-t">Bienvenido</div>
+      <p>Antes de empezar, escribe tu nombre. Aparecerá en cada registro que hagas, así el equipo sabe quién anotó qué.</p>
+      <div class="campo"><label for="f-nombre">Tu nombre</label><input id="f-nombre" autocomplete="name" placeholder="Ej: Alejandro Concha"></div>
+      <button class="btn btn-pri" data-a="guardarNombre">Guardar y continuar</button></div>
+      <p class="pie-app">Diario de Campo ${VERSION} · Alejandro Concha, arqueólogo</p></main>`;
+  }
+  const proys=(await dbAll('proyectos')).sort((a,b)=>(b.actividad||b.creado)-(a.actividad||a.creado));
+  const regs=await dbAll('registros');
+  let inst='';
+  if(!instalada()&&lsGet('dc-sin-instalar')!=='1'){
+    if(instalarEvt)inst=`<div class="aviso"><div class="aviso-t">Instala la app en este teléfono</div><p>Así se abre como una app normal y funciona sin señal.</p><div class="fila"><button class="btn btn-pri" data-a="instalar">Instalar</button><button class="btn btn-sec" data-a="noInstalar">Ahora no</button></div></div>`;
+    else if(esIOS())inst=`<div class="aviso"><div class="aviso-t">Instala la app en tu iPhone</div><p>En Safari, toca el botón <b>Compartir</b> (el cuadrado con flecha) y luego <b>Agregar a pantalla de inicio</b>. Después abre la app desde ese ícono, no desde Safari.</p><button class="btn btn-sec" data-a="noInstalar">Entendido</button></div>`;
+  }
+  const filas=proys.map(p=>{
+    const rs=regs.filter(r=>r.proyectoId===p.id);
+    const pend=rs.filter(r=>(r.modificado||r.creado)>(p.ultimoRespaldo||0)).length;
+    const chip=rs.length===0?'':pend?`<span class="chip warn">${plural(pend,'registro')} sin respaldar</span>`:`<span class="chip ok">Respaldado</span>`;
+    return `<button class="item" data-a="ir" data-v="proyecto" data-id="${p.id}"><div class="item-c">
+      <div class="item-t">${esc(p.nombre)}</div>
+      <div class="item-s">${p.codigo?esc(p.codigo)+' · ':''}${plural(rs.length,'registro')} · ${hace(p.actividad||p.creado)}</div>
+      ${chip?`<div>${chip}</div>`:''}</div><span class="flecha">${ico('sig')}</span></button>`;
+  }).join('');
+  return cab('Diario de Campo','Hola, '+ajustes.nombre.split(' ')[0],false,der)+`<main class="wrap">${inst}
+    <section class="sec"><h2 class="sec-t">Proyectos</h2>
+      ${proys.length?`<div class="lista">${filas}</div>`:`<div class="vacio">Aún no hay proyectos.<br>Crea el primero con el botón de abajo.</div>`}
+    </section>
+    <div class="sec"><button class="btn btn-pri btn-full" data-a="nuevoProyecto">+ Nuevo proyecto</button><button class="btn btn-sec btn-full" data-a="importar">${ico('nube',22)} Abrir un respaldo</button></div>
+    <p class="ayuda">¿Te compartieron un proyecto? Toca <b>Abrir un respaldo</b> y elige el archivo .zip. Si ya tienes ese proyecto, los registros nuevos se suman.</p>
+    <p class="pie-app">Diario de Campo ${VERSION} · Alejandro Concha, arqueólogo</p>
+  </main>`;
+}
+
+/* ---------- pantalla: proyecto ---------- */
+async function vProyecto(id){
+  const p=await dbGet('proyectos',id); if(!p){vista={v:'inicio'};return vInicio();}
+  const dias=(await dbIdx('dias','proyectoId',id)).sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  const regs=await dbIdx('registros','proyectoId',id);
+  const sitios=await dbAll('sitios');
+  const pend=regs.filter(r=>(r.modificado||r.creado)>(p.ultimoRespaldo||0)).length;
+  const hoy=hoyISO(), hayHoy=dias.some(d=>d.fecha===hoy);
+  const resp=regs.length===0?'':pend?`<div class="aviso warn"><div class="aviso-t">${plural(pend,'registro')} sin respaldar</div><p>Último respaldo: ${hace(p.ultimoRespaldo)}. Respalda al terminar cada jornada.</p><button class="btn btn-pri" data-a="respaldar" data-id="${id}">${ico('nube',22)} Respaldar ahora</button></div>`
+    :`<div class="aviso"><div class="aviso-t">Todo respaldado</div><p>Último respaldo: ${hace(p.ultimoRespaldo)}.</p><button class="btn btn-sec" data-a="respaldar" data-id="${id}">${ico('nube',22)} Respaldar o compartir</button></div>`;
+  const filas=dias.map(d=>{
+    const ns=sitios.filter(s=>s.diaId===d.id).length, nr=regs.filter(r=>r.diaId===d.id).length;
+    return `<button class="item" data-a="ir" data-v="dia" data-id="${d.id}"><div class="item-c"><div class="item-t">${esc(fechaLarga(d.fecha))}${d.fecha===hoy?' <span class="chip">Hoy</span>':''}</div><div class="item-s">${plural(ns,'sitio')} · ${plural(nr,'registro')}</div></div><span class="flecha">${ico('sig')}</span></button>`;
+  }).join('');
+  return cab(p.nombre,p.codigo||'Proyecto',true)+`<main class="wrap">
+    <div class="fila"><button class="btn btn-pri" data-a="hoy" data-id="${id}">${hayHoy?'Ir al día de hoy':'Empezar el día de hoy'} · ${esc(fechaCorta(hoy))}</button><button class="btn btn-sec" data-a="otraFecha" data-id="${id}">Otra fecha</button></div>
+    ${resp}
+    <section class="sec"><h2 class="sec-t">Días de terreno</h2>${dias.length?`<div class="lista">${filas}</div>`:`<div class="vacio">Todavía no hay días. Toca <b>Empezar el día de hoy</b>.</div>`}</section>
+    <section class="sec peligro"><button class="btn btn-pel" data-a="borrarProyecto" data-id="${id}">Eliminar proyecto</button></section>
+  </main>`;
+}
+
+/* ---------- pantalla: día ---------- */
+async function vDia(id){
+  const d=await dbGet('dias',id); if(!d){vista={v:'inicio'};return vInicio();}
+  const p=await dbGet('proyectos',d.proyectoId);
+  const sitios=(await dbIdx('sitios','diaId',id)).sort((a,b)=>a.creado-b.creado);
+  const regs=(await dbIdx('registros','proyectoId',d.proyectoId)).filter(r=>r.diaId===id);
+  const filas=sitios.map(s=>{
+    const rs=regs.filter(r=>r.sitioId===s.id);
+    const c=t=>rs.filter(r=>r.tipo===t).length;
+    const det=[c('foto')&&plural(c('foto'),'foto'),c('voz')&&plural(c('voz'),'audio'),c('video')&&plural(c('video'),'video'),c('nota')&&plural(c('nota'),'nota')].filter(Boolean).join(' · ');
+    const ult=rs.length?Math.max(...rs.map(r=>r.creado)):0;
+    return `<button class="item" data-a="ir" data-v="sitio" data-id="${s.id}"><div class="item-c"><div class="item-t">${esc(s.nombre)}</div><div class="item-s">${rs.length?det+' · último '+hora(ult):'Sin registros'}</div></div><span class="flecha">${ico('sig')}</span></button>`;
+  }).join('');
+  return cab(fechaLarga(d.fecha),p?p.nombre:'',true)+`<main class="wrap">
+    <button class="btn btn-pri btn-full" data-a="nuevoSitio" data-id="${id}">+ Nuevo sitio</button>
+    <section class="sec"><h2 class="sec-t">Sitios de este día</h2>${sitios.length?`<div class="lista">${filas}</div>`:`<div class="vacio">Agrega el sitio arqueológico donde vas a trabajar hoy.</div>`}</section>
+    ${regs.length?`<button class="btn btn-sec" data-a="exportarDia" data-id="${id}">${ico('nube',22)} Exportar solo este día</button>`:''}
+  </main>`;
+}
+
+/* ---------- pantalla: sitio ---------- */
+async function vSitio(id){
+  const s=await dbGet('sitios',id); if(!s){vista={v:'inicio'};return vInicio();}
+  const d=await dbGet('dias',s.diaId);
+  const regs=(await dbIdx('registros','sitioId',id)).sort((a,b)=>a.creado-b.creado);
+  const num=new Map(regs.map((r,i)=>[r.id,i+1]));
+  const tarjetas=[];
+  for(const r of regs.slice().reverse()){
+    let media='';
+    if(r.archivoId){
+      const a=await dbGet('archivos',r.archivoId);
+      if(a&&a.blob){const u=URL.createObjectURL(a.blob);urls.push(u);
+        if(r.tipo==='foto')media=`<img src="${u}" alt="Fotografía registro ${num.get(r.id)}" loading="lazy" data-a="verFoto" data-u="${u}">`;
+        else if(r.tipo==='video')media=`<video src="${u}" controls playsinline preload="metadata"></video>`;
+        else media=`<audio src="${u}" controls preload="metadata"></audio>`;
+      }else media=`<p class="ayuda">Archivo no disponible</p>`;
+    }
+    tarjetas.push(`<article class="reg">
+      <div class="reg-cab"><span class="reg-num">Reg. ${pad(num.get(r.id))}</span><span class="reg-tipo">${TIPOS[r.tipo]||r.tipo}${r.duracion?' · '+fmtDur(r.duracion):''}</span><span class="reg-hora">${hora(r.creado)}</span></div>
+      ${media}
+      ${r.texto?`<div class="reg-txt">${esc(r.texto)}</div>`:''}
+      <div class="reg-meta"><span class="mono">${r.pos?esc(utmTexto(r.pos))+' · ±'+Math.round(r.pos.prec)+' m':'Sin coordenadas'}</span><span>${esc(r.autor||'')}${r.origen==='galeria'?' · subido desde galería':''}</span></div>
+      <div class="reg-pie"><span class="chip">${esc(r.etiqueta||'Observación')}</span><button class="btn btn-sec" data-a="editar" data-id="${r.id}">${r.texto?'Editar':'Agregar comentario'}</button></div>
+    </article>`);
+  }
+  return cab(s.nombre,(d?fechaCorta(d.fecha):''),true,`<button class="ico-btn" data-a="opcSitio" data-id="${id}" aria-label="Opciones del sitio">${ico('ajustes',22)}</button>`)+`<main class="wrap">
+    <div class="gps" id="gps">${gpsHTML()}</div>
+    <div class="acciones">
+      <button class="accion voz" data-a="voz">${ico('mic',34)} Grabar voz</button>
+      <button class="accion" data-a="foto">${ico('foto',32)} Foto</button>
+      <button class="accion" data-a="video">${ico('video',32)} Video</button>
+      <button class="accion chica" data-a="nota">${ico('nota',24)} Escribir nota</button>
+      <button class="accion chica" data-a="galeria">${ico('galeria',24)} Desde galería</button>
+    </div>
+    <section class="sec"><h2 class="sec-t">${regs.length?plural(regs.length,'registro')+' · el más reciente arriba':'Registros'}</h2>
+      ${tarjetas.length?tarjetas.join(''):`<div class="vacio">Aún no hay registros en este sitio.<br>Usa los botones de arriba para grabar, fotografiar o anotar.</div>`}
+    </section>
+  </main>`;
+}
+const fmtDur=s=>Math.floor(s/60)+':'+pad(Math.round(s%60));
+
+/* ---------- GPS ---------- */
+function gpsHTML(){
+  if(ultimaPos){const vieja=Date.now()-ultimaPos.ts>180000;const mala=ultimaPos.prec>30;
+    return `<span class="punto ${vieja||mala?'warn':'ok'}"></span><span class="gps-t">${esc(utmTexto(ultimaPos))} · ±${Math.round(ultimaPos.prec)} m${vieja?' · hace '+Math.round((Date.now()-ultimaPos.ts)/60000)+' min':''}</span><button class="ico-btn" data-a="gps" aria-label="Actualizar ubicación">${ico('refrescar',22)}</button>`;}
+  return `<span class="punto ${buscandoPos?'warn':''}"></span><span class="gps-t">${buscandoPos?'Buscando ubicación…':'Sin ubicación. Revisa que el GPS y el permiso estén activos.'}</span><button class="ico-btn" data-a="gps" aria-label="Buscar ubicación">${ico('refrescar',22)}</button>`;
+}
+function pintarGPS(){const g=$('#gps');if(g)g.innerHTML=gpsHTML();}
+function pedirPosicion(timeout=20000){return new Promise(res=>{
+  if(!navigator.geolocation)return res(null);
+  buscandoPos=true;pintarGPS();
+  navigator.geolocation.getCurrentPosition(p=>{buscandoPos=false;
+    ultimaPos={lat:p.coords.latitude,lon:p.coords.longitude,prec:p.coords.accuracy,alt:p.coords.altitude,ts:Date.now()};pintarGPS();res(ultimaPos);},
+    ()=>{buscandoPos=false;pintarGPS();res(null);},{enableHighAccuracy:true,timeout,maximumAge:20000});
+});}
+
+/* ---------- guardar registros ---------- */
+async function nuevoRegistro(datos,blob){
+  const s=await dbGet('sitios',vista.id); if(!s)return;
+  const ahora=Date.now();
+  const r=Object.assign({id:uid(),sitioId:s.id,diaId:s.diaId,proyectoId:s.proyectoId,creado:ahora,modificado:ahora,autor:ajustes.nombre,etiqueta:'Observación',texto:'',
+    pos:(ultimaPos&&ahora-ultimaPos.ts<180000)?ultimaPos:null},datos);
+  if(blob){const aid=uid();await dbPut('archivos',{id:aid,blob,mime:blob.type||''});r.archivoId=aid;r.mime=blob.type||'';r.tam=blob.size;}
+  await dbPut('registros',r);
+  await tocarProyecto(s.proyectoId,ahora);
+  render(false);
+  pedirPosicion().then(async p=>{
+    if(!p)return; const cur=await dbGet('registros',r.id); if(!cur)return;
+    if(!cur.pos||p.prec<cur.pos.prec||ahora-cur.pos.ts>60000){cur.pos=p;await dbPut('registros',cur);if(vista.v==='sitio'&&vista.id===s.id&&!$('#modal').innerHTML)render(false);}
+  });
+  return r;
+}
+async function guardarArchivo(file,origen){
+  if(!file)return;
+  const t=(file.type||'').split('/')[0];
+  const tipo=t==='image'?'foto':t==='video'?'video':t==='audio'?'voz':null;
+  if(!tipo){toast('Ese tipo de archivo no se puede agregar');return;}
+  await nuevoRegistro({tipo,origen,nombreOriginal:file.name||''},file);
+}
+
+/* ---------- grabadora de voz ---------- */
+function modalVoz(){
+  if(!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.MediaRecorder)){$('#in-audio').click();return;}
+  abrirModal(`<h2>Nota de voz</h2>
+    <div class="grab"><button class="grab-btn" id="grab-btn" data-a="grabar" aria-label="Empezar a grabar"><span class="grab-ico"></span></button>
+    <div class="grab-t" id="grab-t">0:00</div><p class="ayuda" id="grab-e">Toca el botón rojo para empezar a grabar.</p></div>
+    <button class="btn btn-sec" data-a="grabCancelar">Cancelar</button>`,true);
+}
+async function grabar(){
+  if(grab){detenerGrabacion(false);return;}
+  let stream;
+  try{stream=await navigator.mediaDevices.getUserMedia({audio:true});}
+  catch(e){abrirModal(`<h2>No se pudo usar el micrófono</h2><p>Revisa que la app tenga permiso para usar el micrófono en los ajustes del teléfono. Mientras tanto puedes usar la grabadora del teléfono.</p><button class="btn btn-pri" data-a="audioArchivo">Usar la grabadora del teléfono</button><button class="btn btn-sec" data-a="cerrar">Cerrar</button>`);return;}
+  const tipos=['audio/mp4','audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus'];
+  const mime=tipos.find(t=>MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t))||'';
+  const rec=new MediaRecorder(stream,mime?{mimeType:mime}:undefined);
+  grab={rec,stream,chunks:[],t0:Date.now(),cancelar:false,lock:null,int:null};
+  rec.ondataavailable=e=>{if(e.data&&e.data.size)grab.chunks.push(e.data);};
+  rec.onstop=async()=>{
+    const g=grab;grab=null;clearInterval(g.int);g.stream.getTracks().forEach(t=>t.stop());
+    if(g.lock)g.lock.release().catch(()=>{});
+    cerrarModal();
+    if(g.cancelar)return;
+    const blob=new Blob(g.chunks,{type:(rec.mimeType||mime||'audio/webm').split(';')[0]});
+    if(!blob.size){toast('La grabación quedó vacía. Intenta de nuevo.');return;}
+    await nuevoRegistro({tipo:'voz',duracion:(Date.now()-g.t0)/1000},blob);
+    toast('Nota de voz guardada');
+  };
+  rec.start(1000);
+  try{if(navigator.wakeLock)grab.lock=await navigator.wakeLock.request('screen');}catch(e){}
+  const b=$('#grab-btn');b.classList.add('on');b.setAttribute('aria-label','Detener y guardar');
+  $('#grab-e').textContent='Grabando… toca de nuevo para detener y guardar.';
+  grab.int=setInterval(()=>{const t=$('#grab-t');if(t)t.textContent=fmtDur((Date.now()-grab.t0)/1000);},500);
+}
+function detenerGrabacion(cancelar){if(!grab){cerrarModal();return;}grab.cancelar=cancelar;try{grab.rec.stop();}catch(e){grab=null;cerrarModal();}}
+
+/* ---------- modales ---------- */
+function abrirModal(html,bloqueado){
+  $('#modal').innerHTML=`<div class="velo" data-velo="${bloqueado?'1':''}"><div class="hoja" role="dialog" aria-modal="true">${html}</div></div>`;
+  const f=$('#modal input, #modal textarea'); if(f)setTimeout(()=>f.focus(),60);
+}
+function cerrarModal(){$('#modal').innerHTML='';}
+document.addEventListener('click',e=>{const v=e.target.classList&&e.target.classList.contains('velo')?e.target:null;if(v&&!v.dataset.velo)cerrarModal();});
+
+function chipsEtq(sel){return `<div class="campo"><label>Tipo de registro</label><div class="chips" id="etqs">${ETIQUETAS.map(t=>`<button type="button" data-a="etq" aria-pressed="${t===sel}">${t}</button>`).join('')}</div></div>`;}
+const etqSel=()=>{const b=document.querySelector('#etqs [aria-pressed="true"]');return b?b.textContent:'Observación';};
+
+function toast(t,ms=2600){const el=$('#toast');el.textContent=t;el.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>el.hidden=true,ms);}
+
+/* ---------- exportar / respaldar ---------- */
+async function exportar(proyectoId,diaId){
+  if(typeof JSZip==='undefined'){toast('No se pudo cargar el módulo de respaldo. Abre la app con internet una vez.');return;}
+  abrirModal(`<h2>Preparando respaldo…</h2><p class="ayuda" id="exp-e">Juntando registros y archivos. No cierres la app.</p>`,true);
+  const t0=Date.now();
+  try{
+    const p=await dbGet('proyectos',proyectoId);
+    let dias=await dbIdx('dias','proyectoId',proyectoId); if(diaId)dias=dias.filter(d=>d.id===diaId);
+    const idsDia=new Set(dias.map(d=>d.id));
+    const sitios=(await dbAll('sitios')).filter(s=>idsDia.has(s.diaId));
+    const regs=(await dbIdx('registros','proyectoId',proyectoId)).filter(r=>idsDia.has(r.diaId)).sort((a,b)=>a.creado-b.creado);
+    const sitioDe=Object.fromEntries(sitios.map(s=>[s.id,s])), diaDe=Object.fromEntries(dias.map(d=>[d.id,d]));
+    const cont={}, numDe={};
+    // numeración por sitio considerando todos los registros del sitio
+    const todos=(await dbIdx('registros','proyectoId',proyectoId)).sort((a,b)=>a.creado-b.creado);
+    for(const r of todos){cont[r.sitioId]=(cont[r.sitioId]||0)+1;numDe[r.id]=cont[r.sitioId];}
+    const zip=new JSZip();
+    const raiz=slug(p.nombre)+'_'+(diaId?dias[0].fecha:hoyISO());
+    const carpeta=zip.folder(raiz);
+    const salida=[];
+    let i=0;
+    for(const r of regs){
+      i++; const e=$('#exp-e'); if(e)e.textContent='Archivo '+i+' de '+regs.length+'…';
+      const s=sitioDe[r.sitioId], d=diaDe[r.diaId];
+      const o=Object.assign({},r,{num:numDe[r.id]});
+      if(r.archivoId){
+        const a=await dbGet('archivos',r.archivoId);
+        if(a&&a.blob){
+          const nombre=d.fecha+'_'+slug(s?s.nombre:'sitio')+'_R'+pad(numDe[r.id],3)+'_'+r.tipo+'_'+iniciales(r.autor)+'.'+extDe(a.mime||r.mime,r.tipo);
+          o.archivo='archivos/'+d.fecha+'/'+slug(s?s.nombre:'sitio')+'/'+nombre;
+          carpeta.file(o.archivo,a.blob,{binary:true,compression:'STORE'});
+        }
+      }
+      salida.push(o);
+    }
+    const datos={formato:'diario-campo',version:1,exportado:new Date(t0).toISOString(),exportadoPor:ajustes.nombre,alcance:diaId?'dia':'proyecto',proyecto:p,dias,sitios,registros:salida};
+    carpeta.file('diario.json',JSON.stringify(datos,null,1));
+    carpeta.file('registros.csv',csv(p,salida,sitioDe,diaDe));
+    carpeta.file('bitacora.html',bitacoraHTML(p,dias,sitios,salida));
+    const e=$('#exp-e'); if(e)e.textContent='Comprimiendo…';
+    const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
+    const nombreZip='DiarioCampo_'+slug(p.nombre)+'_'+(diaId?dias[0].fecha:hoyISO())+'.zip';
+    zipListo={blob,nombre:nombreZip,proyectoId,marca:diaId?null:t0};
+    const file=new File([blob],nombreZip,{type:'application/zip'});
+    const puedeCompartir=!!(navigator.canShare&&navigator.canShare({files:[file]}));
+    abrirModal(`<h2>Respaldo listo</h2>
+      <p><b>${esc(nombreZip)}</b><br>${plural(regs.length,'registro')} · ${mb(blob.size)}</p>
+      ${puedeCompartir?`<button class="btn btn-pri" data-a="compartirZip">${ico('nube',22)} Enviar a Drive, iCloud o WhatsApp</button>`:''}
+      <button class="btn ${puedeCompartir?'btn-sec':'btn-pri'}" data-a="descargarZip">Guardar en el teléfono</button>
+      <p class="ayuda">${puedeCompartir?'Al tocar <b>Enviar</b> elige Google Drive, iCloud (Guardar en Archivos), OneDrive o WhatsApp. ':''}El archivo incluye las fotos, audios y videos, una bitácora para leer en el computador y una tabla con coordenadas UTM para SIG.</p>
+      <button class="btn btn-sec" data-a="cerrar">Cerrar</button>`);
+  }catch(err){console.error(err);abrirModal(`<h2>No se pudo crear el respaldo</h2><p>${esc(err.message||err)}</p><p class="ayuda">Si el proyecto tiene muchos videos, prueba exportar un día a la vez.</p><button class="btn btn-sec" data-a="cerrar">Cerrar</button>`);}
+}
+async function marcarRespaldo(){
+  if(!zipListo||!zipListo.marca)return;
+  const p=await dbGet('proyectos',zipListo.proyectoId); if(p){p.ultimoRespaldo=zipListo.marca;await dbPut('proyectos',p);}
+}
+function csv(p,regs,sitioDe,diaDe){
+  const q=v=>{v=v==null?'':String(v);return /[";\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+  const cab=['proyecto','fecha','sitio','registro','hora','tipo','etiqueta','autor','comentario','huso','este','norte','latitud','longitud','precision_m','archivo'];
+  const filas=regs.map(r=>{const u=r.pos?aUTM(r.pos.lat,r.pos.lon):null;const s=sitioDe[r.sitioId],d=diaDe[r.diaId];
+    return [p.nombre,d?d.fecha:'',s?s.nombre:'',r.num,hora(r.creado),TIPOS[r.tipo]||r.tipo,r.etiqueta,r.autor,r.texto,u?u.zona+u.hemi:'',u?Math.round(u.E):'',u?Math.round(u.N):'',r.pos?r.pos.lat.toFixed(7):'',r.pos?r.pos.lon.toFixed(7):'',r.pos?Math.round(r.pos.prec):'',r.archivo||''].map(q).join(';');});
+  return '﻿'+[cab.join(';')].concat(filas).join('\r\n');
+}
+function bitacoraHTML(p,dias,sitios,regs){
+  const e=esc;
+  let h=`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Bitácora · ${e(p.nombre)}</title>
+<style>body{font:16px/1.5 system-ui,sans-serif;max-width:860px;margin:0 auto;padding:24px 16px;color:#17201D}h1{margin:0}h2{margin-top:36px;border-bottom:2px solid #17201D;padding-bottom:4px}h3{margin-top:24px}
+.r{border:1px solid #CFD7D3;border-radius:8px;padding:12px;margin:10px 0}.m{font-family:ui-monospace,monospace;font-size:14px;color:#55625C}img,video{max-width:100%;max-height:520px;display:block;margin:8px 0;border-radius:6px}audio{width:100%;margin:8px 0}.t{white-space:pre-wrap}</style></head><body>
+<h1>${e(p.nombre)}</h1><p class="m">${p.codigo?e(p.codigo)+' · ':''}Exportado ${e(new Date().toLocaleString('es-CL'))} por ${e(ajustes.nombre)} · Coordenadas UTM WGS84</p>`;
+  for(const d of dias.slice().sort((a,b)=>a.fecha.localeCompare(b.fecha))){
+    const ss=sitios.filter(s=>s.diaId===d.id).sort((a,b)=>a.creado-b.creado); if(!ss.length)continue;
+    h+=`<h2>${e(fechaLarga(d.fecha))}</h2>`;
+    for(const s of ss){
+      const rs=regs.filter(r=>r.sitioId===s.id); if(!rs.length)continue;
+      h+=`<h3>${e(s.nombre)}</h3>`;
+      for(const r of rs){
+        h+=`<div class="r"><b>Reg. ${pad(r.num)} · ${e(TIPOS[r.tipo]||r.tipo)} · ${e(r.etiqueta)}</b><div class="m">${hora(r.creado)} · ${e(r.autor)} · ${r.pos?e(utmTexto(r.pos))+' · ±'+Math.round(r.pos.prec)+' m':'sin coordenadas'}</div>`;
+        if(r.archivo){const a=e(r.archivo);h+=r.tipo==='foto'?`<img src="${a}" alt="">`:r.tipo==='video'?`<video src="${a}" controls></video>`:`<audio src="${a}" controls></audio>`;h+=`<div class="m">${a}</div>`;}
+        if(r.texto)h+=`<div class="t">${e(r.texto)}</div>`;
+        h+='</div>';
+      }
+    }
+  }
+  return h+`<p class="m">Diario de Campo · Alejandro Concha, arqueólogo</p></body></html>`;
+}
+
+/* ---------- importar respaldo ---------- */
+async function importarZip(file){
+  if(typeof JSZip==='undefined'){toast('No se pudo cargar el módulo de respaldo.');return;}
+  abrirModal(`<h2>Abriendo respaldo…</h2><p class="ayuda" id="imp-e">Leyendo el archivo.</p>`,true);
+  try{
+    const zip=await JSZip.loadAsync(file);
+    const jf=zip.file(/(^|\/)diario\.json$/)[0];
+    if(!jf)throw new Error('Este .zip no es un respaldo del Diario de Campo.');
+    const data=JSON.parse(await jf.async('string'));
+    if(data.formato!=='diario-campo')throw new Error('Este .zip no es un respaldo del Diario de Campo.');
+    const base=jf.name.slice(0,-'diario.json'.length);
+    const ahora=Date.now();
+    const pEx=await dbGet('proyectos',data.proyecto.id);
+    if(!pEx)await dbPut('proyectos',Object.assign({},data.proyecto,{ultimoRespaldo:0,actividad:ahora}));
+    for(const d of data.dias){if(!(await dbGet('dias',d.id)))await dbPut('dias',d);}
+    const mapa={}, existentesPorDia={};
+    for(const s of data.sitios){
+      if(await dbGet('sitios',s.id)){mapa[s.id]=s.id;continue;}
+      if(!existentesPorDia[s.diaId])existentesPorDia[s.diaId]=await dbIdx('sitios','diaId',s.diaId);
+      const igual=existentesPorDia[s.diaId].find(x=>x.nombre.trim().toLowerCase()===s.nombre.trim().toLowerCase());
+      if(igual){mapa[s.id]=igual.id;}else{await dbPut('sitios',s);existentesPorDia[s.diaId].push(s);mapa[s.id]=s.id;}
+    }
+    let nuevos=0,repetidos=0,i=0;
+    for(const r0 of data.registros){
+      i++; const e=$('#imp-e'); if(e)e.textContent='Registro '+i+' de '+data.registros.length+'…';
+      if(await dbGet('registros',r0.id)){repetidos++;continue;}
+      const r=Object.assign({},r0,{sitioId:mapa[r0.sitioId]||r0.sitioId,modificado:pEx?ahora:r0.modificado});
+      const ruta=r.archivo; delete r.archivo; delete r.num;
+      if(ruta){const f=zip.file(base+ruta);
+        if(f){const ab=await f.async('arraybuffer');const aid=r.archivoId||uid();await dbPut('archivos',{id:aid,blob:new Blob([ab],{type:r.mime||''}),mime:r.mime||''});r.archivoId=aid;}
+        else delete r.archivoId;}
+      await dbPut('registros',r); nuevos++;
+    }
+    if(!pEx){const p=await dbGet('proyectos',data.proyecto.id);p.ultimoRespaldo=ahora+1;await dbPut('proyectos',p);}
+    else await tocarProyecto(data.proyecto.id,ahora);
+    cerrarModal();
+    toast(nuevos?plural(nuevos,'registro nuevo','registros nuevos')+(repetidos?' · '+repetidos+' ya estaban':''):'No había registros nuevos',4000);
+    ir({v:'proyecto',id:data.proyecto.id});
+  }catch(err){console.error(err);abrirModal(`<h2>No se pudo abrir el respaldo</h2><p>${esc(err.message||err)}</p><button class="btn btn-sec" data-a="cerrar">Cerrar</button>`);}
+}
+
+/* ---------- acciones ---------- */
+const A={
+  ir:b=>ir({v:b.dataset.v,id:b.dataset.id}),
+  atras:()=>history.back(),
+  inicio:()=>ir({v:'inicio'}),
+  cerrar:()=>cerrarModal(),
+  async guardarNombre(){const n=$('#f-nombre').value.trim();if(!n){toast('Escribe tu nombre');return;}ajustes.nombre=n;await dbPut('ajustes',{k:'perfil',v:ajustes});render(true);},
+  instalar:async()=>{if(!instalarEvt)return;instalarEvt.prompt();await instalarEvt.userChoice.catch(()=>{});instalarEvt=null;render(false);},
+  noInstalar:()=>{lsSet('dc-sin-instalar','1');render(false);},
+  ajustes(){abrirModal(`<h2>Ajustes</h2>
+    <div class="campo"><label for="f-nombre2">Tu nombre</label><input id="f-nombre2" value="${esc(ajustes.nombre)}"></div>
+    <p class="ayuda" id="espacio">Calculando espacio usado…</p>
+    <button class="btn btn-pri" data-a="guardarAjustes">Guardar</button>
+    <p class="ayuda">Los registros se guardan solo en este teléfono hasta que hagas un respaldo. Respalda al final de cada jornada.</p>
+    <p class="pie-app">Diario de Campo ${VERSION} · Alejandro Concha, arqueólogo</p>`);
+    if(navigator.storage&&navigator.storage.estimate)navigator.storage.estimate().then(async e=>{const per=navigator.storage.persisted?await navigator.storage.persisted():false;const el=$('#espacio');if(el)el.textContent='Espacio usado: '+mb(e.usage||0)+(e.quota?' de '+mb(e.quota)+' disponibles':'')+(per?' · Datos protegidos':'');});
+  },
+  async guardarAjustes(){const n=$('#f-nombre2').value.trim();if(n){ajustes.nombre=n;await dbPut('ajustes',{k:'perfil',v:ajustes});}cerrarModal();render(false);toast('Guardado');},
+  nuevoProyecto(){abrirModal(`<h2>Nuevo proyecto</h2>
+    <div class="campo"><label for="f-pn">Nombre del proyecto</label><input id="f-pn" placeholder="Ej: Línea de Base Proyecto Los Andes"></div>
+    <div class="campo"><label for="f-pc">Código o mandante (opcional)</label><input id="f-pc" placeholder="Ej: ASC-2026-14"></div>
+    <button class="btn btn-pri" data-a="crearProyecto">Crear proyecto</button><button class="btn btn-sec" data-a="cerrar">Cancelar</button>`);},
+  async crearProyecto(){const n=$('#f-pn').value.trim();if(!n){toast('Escribe un nombre');return;}
+    const p={id:uid(),nombre:n,codigo:$('#f-pc').value.trim(),creado:Date.now(),actividad:Date.now(),creadoPor:ajustes.nombre,ultimoRespaldo:0};
+    await dbPut('proyectos',p);cerrarModal();ir({v:'proyecto',id:p.id});},
+  importar:()=>$('#in-zip').click(),
+  async hoy(b){await abrirDia(b.dataset.id,hoyISO());},
+  otraFecha(b){abrirModal(`<h2>Elegir fecha</h2><div class="campo"><label for="f-fecha">Fecha del día de terreno</label><input type="date" id="f-fecha" value="${hoyISO()}"></div>
+    <button class="btn btn-pri" data-a="crearDia" data-id="${b.dataset.id}">Abrir ese día</button><button class="btn btn-sec" data-a="cerrar">Cancelar</button>`);},
+  async crearDia(b){const f=$('#f-fecha').value;if(!f){toast('Elige una fecha');return;}cerrarModal();await abrirDia(b.dataset.id,f);},
+  nuevoSitio(b){abrirModal(`<h2>Nuevo sitio</h2><div class="campo"><label for="f-sn">Nombre del sitio arqueológico</label><input id="f-sn" placeholder="Ej: Sitio 3 – Alero rocoso"></div>
+    <button class="btn btn-pri" data-a="crearSitio" data-id="${b.dataset.id}">Crear sitio</button><button class="btn btn-sec" data-a="cerrar">Cancelar</button>`);},
+  async crearSitio(b){const n=$('#f-sn').value.trim();if(!n){toast('Escribe un nombre');return;}
+    const d=await dbGet('dias',b.dataset.id);const s={id:uid(),diaId:d.id,proyectoId:d.proyectoId,nombre:n,creado:Date.now(),creadoPor:ajustes.nombre};
+    await dbPut('sitios',s);cerrarModal();ir({v:'sitio',id:s.id});},
+  opcSitio(b){abrirModal(`<h2>Opciones del sitio</h2><div class="campo"><label for="f-sr">Nombre</label><input id="f-sr"></div>
+    <button class="btn btn-pri" data-a="renombrarSitio" data-id="${b.dataset.id}">Guardar nombre</button>
+    <button class="btn btn-pel" data-a="borrarSitio" data-id="${b.dataset.id}">Eliminar sitio y sus registros</button><button class="btn btn-sec" data-a="cerrar">Cancelar</button>`);
+    dbGet('sitios',b.dataset.id).then(s=>{const i=$('#f-sr');if(i&&s)i.value=s.nombre;});},
+  async renombrarSitio(b){const n=$('#f-sr').value.trim();if(!n)return;const s=await dbGet('sitios',b.dataset.id);s.nombre=n;await dbPut('sitios',s);cerrarModal();render(false);},
+  async borrarSitio(b){if(b.dataset.ok!=='1'){b.dataset.ok='1';b.textContent='Toca de nuevo para confirmar';return;}
+    const s=await dbGet('sitios',b.dataset.id);for(const r of await dbIdx('registros','sitioId',s.id)){if(r.archivoId)await dbDel('archivos',r.archivoId);await dbDel('registros',r.id);}
+    await dbDel('sitios',s.id);cerrarModal();toast('Sitio eliminado');history.back();},
+  async borrarProyecto(b){abrirModal(`<h2>Eliminar proyecto</h2><p>Se borrarán del teléfono todos sus días, sitios, fotos, audios y videos. Esto no se puede deshacer. Si tienes un respaldo, podrás recuperarlo desde ahí.</p>
+    <button class="btn btn-pel" data-a="borrarProyectoOk" data-id="${b.dataset.id}">Sí, eliminar el proyecto</button><button class="btn btn-sec" data-a="cerrar">Cancelar</button>`);},
+  async borrarProyectoOk(b){const id=b.dataset.id;
+    for(const r of await dbIdx('registros','proyectoId',id)){if(r.archivoId)await dbDel('archivos',r.archivoId);await dbDel('registros',r.id);}
+    for(const d of await dbIdx('dias','proyectoId',id)){for(const s of await dbIdx('sitios','diaId',d.id))await dbDel('sitios',s.id);await dbDel('dias',d.id);}
+    await dbDel('proyectos',id);cerrarModal();toast('Proyecto eliminado');vista={v:'inicio'};history.replaceState(vista,'');render(true);},
+  voz:()=>modalVoz(),
+  grabar:()=>grabar(),
+  grabCancelar:()=>detenerGrabacion(true),
+  audioArchivo:()=>{cerrarModal();$('#in-audio').click();},
+  foto:()=>{pedirPosicion();$('#in-foto').click();},
+  video:()=>{pedirPosicion();$('#in-video').click();},
+  galeria:()=>$('#in-galeria').click(),
+  gps:()=>pedirPosicion(),
+  nota(){pedirPosicion();abrirModal(`<h2>Nota escrita</h2><div class="campo"><label for="f-txt">Lo que observas</label><textarea id="f-txt" placeholder="Describe lo que ves: material, ubicación, contexto…"></textarea></div>
+    ${chipsEtq('Observación')}<button class="btn btn-pri" data-a="guardarNota">Guardar nota</button><button class="btn btn-sec" data-a="cerrar">Cancelar</button>`);},
+  async guardarNota(){const t=$('#f-txt').value.trim();if(!t){toast('La nota está vacía');return;}const e=etqSel();cerrarModal();await nuevoRegistro({tipo:'nota',texto:t,etiqueta:e});toast('Nota guardada');},
+  etq(b){b.parentElement.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed','true');},
+  async editar(b){const r=await dbGet('registros',b.dataset.id);if(!r)return;
+    abrirModal(`<h2>${TIPOS[r.tipo]} · ${hora(r.creado)}</h2><div class="campo"><label for="f-txt">Comentario</label><textarea id="f-txt" placeholder="Agrega una descripción">${esc(r.texto)}</textarea></div>
+      ${chipsEtq(r.etiqueta||'Observación')}<button class="btn btn-pri" data-a="guardarEdicion" data-id="${r.id}">Guardar</button>
+      <button class="btn btn-pel" data-a="borrarReg" data-id="${r.id}">Eliminar registro</button><button class="btn btn-sec" data-a="cerrar">Cancelar</button>`);},
+  async guardarEdicion(b){const r=await dbGet('registros',b.dataset.id);r.texto=$('#f-txt').value.trim();r.etiqueta=etqSel();r.modificado=Date.now();await dbPut('registros',r);await tocarProyecto(r.proyectoId);cerrarModal();render(false);toast('Guardado');},
+  async borrarReg(b){if(b.dataset.ok!=='1'){b.dataset.ok='1';b.textContent='Toca de nuevo para confirmar';return;}
+    const r=await dbGet('registros',b.dataset.id);if(r.archivoId)await dbDel('archivos',r.archivoId);await dbDel('registros',r.id);cerrarModal();render(false);toast('Registro eliminado');},
+  verFoto(b){abrirModal('');$('#modal').innerHTML=`<div class="visor" data-a="cerrar"><img src="${b.dataset.u}" alt="Fotografía ampliada"><button class="ico-btn" data-a="cerrar" aria-label="Cerrar">${ico('cerrar',26)}</button></div>`;},
+  respaldar:b=>exportar(b.dataset.id),
+  async exportarDia(b){const d=await dbGet('dias',b.dataset.id);exportar(d.proyectoId,d.id);},
+  async compartirZip(){if(!zipListo)return;const f=new File([zipListo.blob],zipListo.nombre,{type:'application/zip'});
+    try{await navigator.share({files:[f],title:zipListo.nombre});await marcarRespaldo();cerrarModal();toast('Respaldo enviado');render(false);}
+    catch(e){if(e&&e.name==='AbortError')return;toast('No se pudo compartir. Usa “Guardar en el teléfono”.');}},
+  async descargarZip(){if(!zipListo)return;const u=URL.createObjectURL(zipListo.blob);const a=document.createElement('a');a.href=u;a.download=zipListo.nombre;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000);
+    await marcarRespaldo();cerrarModal();toast('Respaldo guardado en Descargas / Archivos',3500);render(false);}
+};
+async function abrirDia(proyectoId,fecha){
+  const id=proyectoId+'_'+fecha;
+  if(!(await dbGet('dias',id)))await dbPut('dias',{id,proyectoId,fecha,creado:Date.now()});
+  ir({v:'dia',id});
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b||!A[b.dataset.a])return;e.preventDefault();
+  Promise.resolve(A[b.dataset.a](b,e)).catch(err=>{console.error(err);toast('Algo falló: '+(err.message||err));});});
+
+/* ---------- entradas de archivo ---------- */
+function alElegir(id,fn){$(id).addEventListener('change',async e=>{const fs=[...e.target.files];e.target.value='';for(const f of fs)await fn(f);});}
+alElegir('#in-foto',async f=>{await guardarArchivo(f,'camara');toast('Foto guardada');});
+alElegir('#in-video',async f=>{await guardarArchivo(f,'camara');toast('Video guardado');});
+alElegir('#in-audio',async f=>{await guardarArchivo(f,'grabadora');toast('Audio guardado');});
+alElegir('#in-galeria',async f=>{await guardarArchivo(f,'galeria');toast('Archivo agregado');});
+alElegir('#in-zip',f=>importarZip(f));
+
+/* ---------- inicio de la app ---------- */
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();instalarEvt=e;if(vista.v==='inicio')render(false);});
+addEventListener('beforeunload',e=>{if(grab){e.preventDefault();e.returnValue='';}});
+(async function(){
+  try{db=await abrirDB();}catch(e){$('#app').innerHTML=cab('Diario de Campo')+`<main class="wrap"><div class="aviso warn"><div class="aviso-t">Este navegador no permite guardar datos</div><p>Abre la app en Safari (iPhone) o Chrome (Android), fuera del modo incógnito.</p></div></main>`;return;}
+  try{const a=await dbGet('ajustes','perfil');if(a)ajustes=a.v;}catch(e){}
+  try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
+  history.replaceState(vista,'');
+  render(true);
+  if('serviceWorker' in navigator&&location.protocol==='https:'&&!/claude|anthropic/.test(location.hostname)){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+})();
+</script>
+
+</body>
+</html>

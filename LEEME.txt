@@ -1,0 +1,36 @@
+DIARIO DE CAMPO 1.0 — Bitácora de terreno arqueológico
+Alejandro Concha, arqueólogo
+=======================================================
+
+QUÉ HACE
+- Organiza todo en: Proyecto > Día > Sitio arqueológico > Registros.
+- Cada registro puede ser: nota de voz, foto, video o nota escrita.
+- Cada registro guarda hora, autor y coordenadas UTM WGS84 (huso automático, ej. 19S).
+- Funciona sin señal una vez instalada.
+- Respaldo: crea un .zip con todo (fotos, audios, videos, bitacora.html para leer
+  en el PC, registros.csv con coordenadas para ArcGIS/QGIS y diario.json).
+  Se envía a Google Drive, iCloud, OneDrive o WhatsApp desde el mismo teléfono.
+- Trabajo en equipo: tú exportas el proyecto y lo compartes; cada persona lo abre
+  con "Abrir un respaldo", registra, y te devuelve su respaldo. Al abrirlo, sus
+  registros se suman a tu proyecto (los sitios con el mismo nombre se juntan).
+
+CÓMO PUBLICARLA (una sola vez)
+La app necesita estar en una dirección web con https. Opción recomendada, gratis:
+GitHub Pages
+  1. Crea una cuenta en github.com y un repositorio nuevo (ej. "diario-campo").
+  2. Sube TODO el contenido de esta carpeta (index.html, sw.js, manifest, iconos, jszip).
+  3. En Settings > Pages, elige la rama "main" y carpeta "/ (root)". Guarda.
+  4. En un minuto tendrás una dirección tipo https://TU-USUARIO.github.io/diario-campo/
+También sirve Netlify, Cloudflare Pages o tu propia plataforma (AEGIS).
+
+CÓMO INSTALARLA EN EL TELÉFONO (cada persona del equipo)
+- iPhone: abre la dirección en SAFARI > botón Compartir > "Agregar a pantalla de inicio".
+  Usa siempre el ícono, no Safari: los datos de Safari y de la app instalada son distintos.
+- Android: abre la dirección en CHROME > toca "Instalar" (o menú ⋮ > "Instalar app").
+- La primera vez acepta los permisos de cámara, micrófono y ubicación.
+
+RECOMENDACIONES DE TERRENO
+- Respalda al final de cada jornada. Los datos viven en el teléfono hasta respaldar.
+- Si se borra la app o el navegador, se pierde lo no respaldado.
+- En iPhone la grabación de voz se detiene si se bloquea la pantalla.
+- Con muchos videos, usa "Exportar solo este día" para archivos más livianos.
